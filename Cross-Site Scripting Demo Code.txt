@@ -1,0 +1,31 @@
+from flask import Flask, request, render_template_string
+
+app = Flask(__name__)
+
+# Simulated user data
+users = [
+    {'id': 1, 'name': 'Alice', 'email': 'alice@example.com'},
+    {'id': 2, 'name': 'Bob', 'email': 'bob@example.com'}
+]
+
+# Vulnerable search endpoint
+@app.route('/search', methods=['GET'])
+def search():
+    query = request.args.get('q', '')
+    results = [user for user in users if query.lower() in user['name'].lower()]
+    
+    # Vulnerable to reflected XSS: Directly injecting user input into HTML without escaping
+    html = f"""
+    <html>
+    <body>
+        <h1>Search Results for: {query}</h1>
+        <ul>
+            {"".join(f"<li>{user['name']} - {user['email']}</li>" for user in results)}
+        </ul>
+    </body>
+    </html>
+    """
+    return render_template_string(html)
+
+if __name__ == '__main__':
+    app.run(debug=True)  # Additional misconfiguration: Debug mode in prod exposes errors
